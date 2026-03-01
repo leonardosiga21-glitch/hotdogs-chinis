@@ -11,36 +11,31 @@
 body{
     margin:0;
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(to right, #ff9800, #ff5722);
+    background: linear-gradient(to right, #000000, #1c1c1c);
+    color:white;
 }
 
 header{
-    background: rgba(0,0,0,0.6);
-    color:white;
     text-align:center;
     padding:40px 20px;
 }
 
 .logo{
-    width:220px;
-    margin-bottom:15px;
+    width:200px;
     border-radius:15px;
-    box-shadow:0px 5px 20px rgba(0,0,0,0.5);
 }
 
-header h1{
-    margin:10px 0 5px;
-    font-weight:800;
+h1{
+    color:#d4af37;
 }
 
 .container{
-    background:white;
+    background:#111;
     width:95%;
     max-width:1100px;
     margin:30px auto;
     padding:30px;
     border-radius:20px;
-    box-shadow:0px 8px 25px rgba(0,0,0,0.2);
 }
 
 .menu{
@@ -51,28 +46,28 @@ header h1{
 }
 
 .card{
-    background:#fff8e1;
+    background:#1e1e1e;
     width:260px;
     padding:20px;
     border-radius:15px;
     text-align:center;
-    transition:0.3s;
-    box-shadow:0px 5px 15px rgba(0,0,0,0.15);
+    transition:0.4s;
+    border:1px solid #d4af37;
 }
 
 .card:hover{
-    transform:translateY(-6px);
+    transform:translateY(-8px) scale(1.03);
 }
 
 .price{
     font-size:20px;
     font-weight:bold;
-    color:#e65100;
+    color:#d4af37;
 }
 
 button{
-    background:#e65100;
-    color:white;
+    background:#d4af37;
+    color:black;
     border:none;
     padding:10px 15px;
     border-radius:8px;
@@ -82,12 +77,12 @@ button{
 }
 
 button:hover{
-    background:#bf360c;
+    background:#b8962e;
 }
 
 .carrito{
     margin-top:40px;
-    background:#f5f5f5;
+    background:#1e1e1e;
     padding:20px;
     border-radius:15px;
 }
@@ -97,20 +92,30 @@ select, input{
     margin-top:10px;
     width:100%;
     border-radius:8px;
-    border:1px solid #ccc;
+    border:none;
 }
 
 .total{
     font-size:22px;
     font-weight:bold;
     margin-top:15px;
+    color:#d4af37;
 }
 
-@media(max-width:768px){
-    .menu{
-        flex-direction:column;
-        align-items:center;
-    }
+.cerrado{
+    background:#8b0000;
+    padding:15px;
+    text-align:center;
+    font-weight:bold;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+.admin{
+    margin-top:30px;
+    background:#222;
+    padding:15px;
+    border-radius:10px;
 }
 </style>
 </head>
@@ -120,10 +125,12 @@ select, input{
 <header>
 <img src="logo-CHINIS.jpg" class="logo">
 <h1>HOTDOGS & HAMBURGUESAS CHINIS</h1>
-<p>🔥 Sabor que Enamora 🔥</p>
+<p>Sabor Premium 🔥</p>
 </header>
 
 <div class="container">
+
+<div id="estado"></div>
 
 <h2>Menú</h2>
 
@@ -154,6 +161,8 @@ select, input{
 
 <ul id="lista"></ul>
 
+<input type="text" id="codigoPromo" placeholder="Código Promocional">
+
 <p class="total">Total: $<span id="total">0</span></p>
 
 <label>Forma de Pago:</label>
@@ -180,62 +189,94 @@ select, input{
 
 </div>
 
+<div class="admin">
+<h3>Panel Administrativo</h3>
+<p>Promoción activa: <b>CHINIS10 - 10%</b></p>
+<p>Pedidos guardados: <span id="historial"></span></p>
+</div>
+
 </div>
 
 <script>
 
 let total = 0;
+let descuento = 0;
+
+function verificarHorario(){
+    let ahora = new Date();
+    let dia = ahora.getDay();
+    let hora = ahora.getHours();
+
+    if((dia === 4 || dia === 5 || dia === 6) && hora >= 19 && hora < 23){
+        document.getElementById("estado").innerHTML = "<div style='color:lightgreen;font-weight:bold;'>🟢 Estamos Abiertos</div>";
+        return true;
+    } else {
+        document.getElementById("estado").innerHTML = "<div class='cerrado'>🔴 Estamos Cerrados<br>Horario: Jueves a Sábado 19:00–23:00</div>";
+        return false;
+    }
+}
 
 function agregar(precio, nombre){
+    if(!verificarHorario()) return;
+
     total += precio;
-    document.getElementById("total").innerText = total;
+    actualizarTotal();
 
     let li = document.createElement("li");
     li.textContent = nombre + " - $" + precio;
     document.getElementById("lista").appendChild(li);
 }
 
-function verDireccion(){
-    let tipo = document.getElementById("tipoPedido").value;
-    let box = document.getElementById("direccionBox");
-
-    if(tipo === "Domicilio"){
-        box.style.display = "block";
-    } else {
-        box.style.display = "none";
-    }
+function actualizarTotal(){
+    let totalFinal = total - descuento;
+    document.getElementById("total").innerText = totalFinal;
 }
 
+function verDireccion(){
+    let tipo = document.getElementById("tipoPedido").value;
+    document.getElementById("direccionBox").style.display =
+        tipo === "Domicilio" ? "block" : "none";
+}
+
+function aplicarPromo(){
+    let codigo = document.getElementById("codigoPromo").value;
+
+    if(codigo === "CHINIS10"){
+        descuento = total * 0.10;
+        alert("Código aplicado ✅ 10% de descuento");
+    } else {
+        descuento = 0;
+    }
+
+    actualizarTotal();
+}
+
+document.getElementById("codigoPromo").addEventListener("change", aplicarPromo);
+
 function finalizar(){
+    if(!verificarHorario()) return;
+
     let pago = document.getElementById("pago").value;
     let tipo = document.getElementById("tipoPedido").value;
     let direccion = document.getElementById("direccion").value;
 
-    if(total === 0){
-        alert("Agrega al menos un producto");
-        return;
-    }
-
-    if(pago === ""){
-        alert("Selecciona forma de pago");
-        return;
-    }
-
-    if(tipo === ""){
-        alert("Selecciona tipo de pedido");
+    if(total === 0 || pago === "" || tipo === ""){
+        alert("Completa todos los campos");
         return;
     }
 
     if(tipo === "Domicilio" && direccion === ""){
-        alert("Ingresa tu dirección para envío");
+        alert("Ingresa tu dirección");
         return;
     }
 
+    let totalFinal = total - descuento;
+
     let productos = document.getElementById("lista").innerText;
 
-    let mensaje = "🛒 NUEVO PEDIDO - CHINIS %0A%0A" +
-                  "Productos:%0A" + productos + "%0A%0A" +
-                  "Total: $" + total + "%0A" +
+    let mensaje = "🛒 NUEVO PEDIDO CHINIS %0A%0A" +
+                  productos + "%0A%0A" +
+                  "Total: $" + totalFinal + "%0A" +
                   "Pago: " + pago + "%0A" +
                   "Tipo: " + tipo + "%0A";
 
@@ -244,11 +285,18 @@ function finalizar(){
     }
 
     let telefono = "523339065846";
-
     window.open("https://wa.me/" + telefono + "?text=" + mensaje, "_blank");
+
+    let pedidos = localStorage.getItem("pedidos") || 0;
+    pedidos++;
+    localStorage.setItem("pedidos", pedidos);
+    document.getElementById("historial").innerText = pedidos;
 
     alert("Pedido enviado correctamente ✅");
 }
+
+verificarHorario();
+document.getElementById("historial").innerText = localStorage.getItem("pedidos") || 0;
 
 </script>
 
