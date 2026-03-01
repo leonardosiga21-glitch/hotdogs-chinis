@@ -14,21 +14,17 @@ body{
     background: linear-gradient(to right, #000000, #1c1c1c);
     color:white;
 }
-
 header{
     text-align:center;
     padding:40px 20px;
 }
-
 .logo{
     width:200px;
     border-radius:15px;
 }
-
 h1{
     color:#d4af37;
 }
-
 .container{
     background:#111;
     width:95%;
@@ -37,14 +33,12 @@ h1{
     padding:30px;
     border-radius:20px;
 }
-
 .menu{
     display:flex;
     flex-wrap:wrap;
     justify-content:center;
     gap:20px;
 }
-
 .card{
     background:#1e1e1e;
     width:260px;
@@ -54,17 +48,14 @@ h1{
     transition:0.4s;
     border:1px solid #d4af37;
 }
-
 .card:hover{
     transform:translateY(-8px) scale(1.03);
 }
-
 .price{
     font-size:20px;
     font-weight:bold;
     color:#d4af37;
 }
-
 button{
     background:#d4af37;
     color:black;
@@ -75,18 +66,15 @@ button{
     margin-top:10px;
     font-weight:600;
 }
-
 button:hover{
     background:#b8962e;
 }
-
 .carrito{
     margin-top:40px;
     background:#1e1e1e;
     padding:20px;
     border-radius:15px;
 }
-
 select, input{
     padding:10px;
     margin-top:10px;
@@ -94,28 +82,18 @@ select, input{
     border-radius:8px;
     border:none;
 }
-
 .total{
     font-size:22px;
     font-weight:bold;
     margin-top:15px;
     color:#d4af37;
 }
-
-.cerrado{
-    background:#8b0000;
-    padding:15px;
-    text-align:center;
-    font-weight:bold;
-    border-radius:10px;
-    margin-bottom:20px;
-}
-
-.admin{
-    margin-top:30px;
-    background:#222;
-    padding:15px;
-    border-radius:10px;
+textarea{
+    width:100%;
+    margin-top:10px;
+    padding:10px;
+    border-radius:8px;
+    border:none;
 }
 </style>
 </head>
@@ -129,8 +107,6 @@ select, input{
 </header>
 
 <div class="container">
-
-<div id="estado"></div>
 
 <h2>Menú</h2>
 
@@ -159,145 +135,115 @@ select, input{
 <div class="carrito">
 <h2>🛒 Tu Pedido</h2>
 
+<form id="formPedido">
+
+<input type="text" id="nombre" placeholder="Tu nombre" required>
+
 <ul id="lista"></ul>
 
 <input type="text" id="codigoPromo" placeholder="Código Promocional">
 
 <p class="total">Total: $<span id="total">0</span></p>
 
-<label>Forma de Pago:</label>
-<select id="pago">
-<option value="">Seleccionar</option>
-<option value="Efectivo">Efectivo</option>
-<option value="Tarjeta">Tarjeta</option>
-</select>
-
 <label>Tipo de Pedido:</label>
-<select id="tipoPedido" onchange="verDireccion()">
-<option value="">Seleccionar</option>
+<select id="tipoPedido">
 <option value="Recoger">Para recoger</option>
 <option value="Domicilio">A domicilio</option>
 </select>
 
-<div id="direccionBox" style="display:none;">
-<label>Dirección:</label>
-<input type="text" id="direccion" placeholder="Escribe tu dirección completa">
-</div>
+<input type="text" id="direccion" placeholder="Dirección (si es domicilio)">
 
-<br>
-<button onclick="finalizar()">Finalizar Pedido</button>
+<button type="submit">Enviar Pedido</button>
 
-</div>
+</form>
 
-<div class="admin">
-<h3>Panel Administrativo</h3>
-<p>Promoción activa: <b>CHINIS10 - 10%</b></p>
-<p>Pedidos guardados: <span id="historial"></span></p>
 </div>
 
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCj_IMuiq68im6n1jug57qf7ketoM3xb4w",
+  authDomain: "chinis-pedidos.firebaseapp.com",
+  projectId: "chinis-pedidos",
+  storageBucket: "chinis-pedidos.firebasestorage.app",
+  messagingSenderId: "926867987996",
+  appId: "1:926867987996:web:58fd428f1a2a120d0bc9d9"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 let total = 0;
 let descuento = 0;
+let productos = [];
 
-function verificarHorario(){
-    let ahora = new Date();
-    let dia = ahora.getDay();
-    let hora = ahora.getHours();
-
-    if((dia === 4 || dia === 5 || dia === 6) && hora >= 19 && hora < 23){
-        document.getElementById("estado").innerHTML = "<div style='color:lightgreen;font-weight:bold;'>🟢 Estamos Abiertos</div>";
-        return true;
-    } else {
-        document.getElementById("estado").innerHTML = "<div class='cerrado'>🔴 Estamos Cerrados<br>Horario: Jueves a Sábado 19:00–23:00</div>";
-        return false;
-    }
-}
-
-function agregar(precio, nombre){
-    if(!verificarHorario()) return;
-
+window.agregar = function(precio, nombre){
     total += precio;
-    actualizarTotal();
+    productos.push(nombre + " - $" + precio);
 
     let li = document.createElement("li");
     li.textContent = nombre + " - $" + precio;
     document.getElementById("lista").appendChild(li);
-}
-
-function actualizarTotal(){
-    let totalFinal = total - descuento;
-    document.getElementById("total").innerText = totalFinal;
-}
-
-function verDireccion(){
-    let tipo = document.getElementById("tipoPedido").value;
-    document.getElementById("direccionBox").style.display =
-        tipo === "Domicilio" ? "block" : "none";
-}
-
-function aplicarPromo(){
-    let codigo = document.getElementById("codigoPromo").value;
-
-    if(codigo === "CHINIS10"){
-        descuento = total * 0.10;
-        alert("Código aplicado ✅ 10% de descuento");
-    } else {
-        descuento = 0;
-    }
 
     actualizarTotal();
 }
 
-document.getElementById("codigoPromo").addEventListener("change", aplicarPromo);
-
-function finalizar(){
-    if(!verificarHorario()) return;
-
-    let pago = document.getElementById("pago").value;
-    let tipo = document.getElementById("tipoPedido").value;
-    let direccion = document.getElementById("direccion").value;
-
-    if(total === 0 || pago === "" || tipo === ""){
-        alert("Completa todos los campos");
-        return;
-    }
-
-    if(tipo === "Domicilio" && direccion === ""){
-        alert("Ingresa tu dirección");
-        return;
-    }
-
-    let totalFinal = total - descuento;
-
-    let productos = document.getElementById("lista").innerText;
-
-    let mensaje = "🛒 NUEVO PEDIDO CHINIS %0A%0A" +
-                  productos + "%0A%0A" +
-                  "Total: $" + totalFinal + "%0A" +
-                  "Pago: " + pago + "%0A" +
-                  "Tipo: " + tipo + "%0A";
-
-    if(tipo === "Domicilio"){
-        mensaje += "Dirección: " + direccion + "%0A";
-    }
-
-    let telefono = "523339065846";
-    window.open("https://wa.me/" + telefono + "?text=" + mensaje, "_blank");
-
-    let pedidos = localStorage.getItem("pedidos") || 0;
-    pedidos++;
-    localStorage.setItem("pedidos", pedidos);
-    document.getElementById("historial").innerText = pedidos;
-
-    alert("Pedido enviado correctamente ✅");
+function actualizarTotal(){
+    document.getElementById("total").innerText = total - descuento;
 }
 
-verificarHorario();
-document.getElementById("historial").innerText = localStorage.getItem("pedidos") || 0;
+document.getElementById("codigoPromo").addEventListener("change", function(){
+    if(this.value === "CHINIS10"){
+        descuento = total * 0.10;
+        alert("Código aplicado 10% ✅");
+    } else {
+        descuento = 0;
+    }
+    actualizarTotal();
+});
 
+document.getElementById("formPedido").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+
+    const nombre = document.getElementById("nombre").value;
+    const tipo = document.getElementById("tipoPedido").value;
+    const direccion = document.getElementById("direccion").value;
+    const totalFinal = total - descuento;
+
+    if(productos.length === 0){
+        alert("Agrega al menos un producto");
+        return;
+    }
+
+    try{
+        await addDoc(collection(db, "pedidos"), {
+            nombre: nombre,
+            productos: productos,
+            total: totalFinal,
+            tipo: tipo,
+            direccion: direccion,
+            fecha: serverTimestamp(),
+            estado: "Pendiente"
+        });
+
+        alert("Pedido enviado correctamente ✅");
+
+        total = 0;
+        descuento = 0;
+        productos = [];
+        document.getElementById("lista").innerHTML = "";
+        actualizarTotal();
+        document.getElementById("formPedido").reset();
+
+    }catch(error){
+        alert("Error al enviar pedido ❌");
+        console.error(error);
+    }
+});
 </script>
 
 </body>
