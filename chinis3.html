@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HotDogs & Hamburguesas Chinis</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+body{
+    margin:0;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(to right, #ff9800, #ff5722);
+}
+
+header{
+    background: rgba(0,0,0,0.6);
+    color:white;
+    text-align:center;
+    padding:40px 20px;
+}
+
+.logo{
+    width:220px;
+    margin-bottom:15px;
+    border-radius:15px;
+    box-shadow:0px 5px 20px rgba(0,0,0,0.5);
+}
+
+header h1{
+    margin:10px 0 5px;
+    font-weight:800;
+}
+
+.container{
+    background:white;
+    width:95%;
+    max-width:1100px;
+    margin:30px auto;
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0px 8px 25px rgba(0,0,0,0.2);
+}
+
+.menu{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:20px;
+}
+
+.card{
+    background:#fff8e1;
+    width:260px;
+    padding:20px;
+    border-radius:15px;
+    text-align:center;
+    transition:0.3s;
+    box-shadow:0px 5px 15px rgba(0,0,0,0.15);
+}
+
+.card:hover{
+    transform:translateY(-6px);
+}
+
+.price{
+    font-size:20px;
+    font-weight:bold;
+    color:#e65100;
+}
+
+button{
+    background:#e65100;
+    color:white;
+    border:none;
+    padding:10px 15px;
+    border-radius:8px;
+    cursor:pointer;
+    margin-top:10px;
+    font-weight:600;
+}
+
+button:hover{
+    background:#bf360c;
+}
+
+.carrito{
+    margin-top:40px;
+    background:#f5f5f5;
+    padding:20px;
+    border-radius:15px;
+}
+
+select, input{
+    padding:10px;
+    margin-top:10px;
+    width:100%;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+.total{
+    font-size:22px;
+    font-weight:bold;
+    margin-top:15px;
+}
+
+@media(max-width:768px){
+    .menu{
+        flex-direction:column;
+        align-items:center;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<img src="logo-CHINIS.jpg" class="logo">
+<h1>HOTDOGS & HAMBURGUESAS CHINIS</h1>
+<p>🔥 Sabor que Enamora 🔥</p>
+</header>
+
+<div class="container">
+
+<h2>Menú</h2>
+
+<div class="menu">
+
+<div class="card">
+<h3>Hot Dog Clásico</h3>
+<p class="price">$35</p>
+<button onclick="agregar(35,'Hot Dog Clásico')">Agregar</button>
+</div>
+
+<div class="card">
+<h3>Hamburguesa Especial</h3>
+<p class="price">$65</p>
+<button onclick="agregar(65,'Hamburguesa Especial')">Agregar</button>
+</div>
+
+<div class="card">
+<h3>Chinis Combo</h3>
+<p class="price">$95</p>
+<button onclick="agregar(95,'Chinis Combo')">Agregar</button>
+</div>
+
+</div>
+
+<div class="carrito">
+<h2>🛒 Tu Pedido</h2>
+
+<ul id="lista"></ul>
+
+<p class="total">Total: $<span id="total">0</span></p>
+
+<label>Forma de Pago:</label>
+<select id="pago">
+<option value="">Seleccionar</option>
+<option value="Efectivo">Efectivo</option>
+<option value="Tarjeta">Tarjeta</option>
+</select>
+
+<label>Tipo de Pedido:</label>
+<select id="tipoPedido" onchange="verDireccion()">
+<option value="">Seleccionar</option>
+<option value="Recoger">Para recoger</option>
+<option value="Domicilio">A domicilio</option>
+</select>
+
+<div id="direccionBox" style="display:none;">
+<label>Dirección:</label>
+<input type="text" id="direccion" placeholder="Escribe tu dirección completa">
+</div>
+
+<br>
+<button onclick="finalizar()">Finalizar Pedido</button>
+
+</div>
+
+</div>
+
+<script>
+
+let total = 0;
+
+function agregar(precio, nombre){
+    total += precio;
+    document.getElementById("total").innerText = total;
+
+    let li = document.createElement("li");
+    li.textContent = nombre + " - $" + precio;
+    document.getElementById("lista").appendChild(li);
+}
+
+function verDireccion(){
+    let tipo = document.getElementById("tipoPedido").value;
+    let box = document.getElementById("direccionBox");
+
+    if(tipo === "Domicilio"){
+        box.style.display = "block";
+    } else {
+        box.style.display = "none";
+    }
+}
+
+function finalizar(){
+    let pago = document.getElementById("pago").value;
+    let tipo = document.getElementById("tipoPedido").value;
+    let direccion = document.getElementById("direccion").value;
+
+    if(total === 0){
+        alert("Agrega al menos un producto");
+        return;
+    }
+
+    if(pago === ""){
+        alert("Selecciona forma de pago");
+        return;
+    }
+
+    if(tipo === ""){
+        alert("Selecciona tipo de pedido");
+        return;
+    }
+
+    if(tipo === "Domicilio" && direccion === ""){
+        alert("Ingresa tu dirección para envío");
+        return;
+    }
+
+    let productos = document.getElementById("lista").innerText;
+
+    let mensaje = "🛒 NUEVO PEDIDO - CHINIS %0A%0A" +
+                  "Productos:%0A" + productos + "%0A%0A" +
+                  "Total: $" + total + "%0A" +
+                  "Pago: " + pago + "%0A" +
+                  "Tipo: " + tipo + "%0A";
+
+    if(tipo === "Domicilio"){
+        mensaje += "Dirección: " + direccion + "%0A";
+    }
+
+    let telefono = "523339065846";
+
+    window.open("https://wa.me/" + telefono + "?text=" + mensaje, "_blank");
+
+    alert("Pedido enviado correctamente ✅");
+}
+
+</script>
+
+</body>
+</html>
