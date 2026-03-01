@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Administrativo - CHINIS</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+body{
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    background:#111;
+    color:white;
+}
+h1{
+    text-align:center;
+    color:#d4af37;
+    margin:30px 0;
+}
+.container{
+    width:95%;
+    max-width:1100px;
+    margin:auto;
+}
+.card{
+    background:#1e1e1e;
+    padding:20px;
+    border-radius:15px;
+    margin-bottom:20px;
+    border-left:6px solid #d4af37;
+    animation:fadeIn 0.5s ease-in-out;
+}
+select{
+    padding:8px;
+    border-radius:8px;
+    border:none;
+    margin-top:10px;
+}
+@keyframes fadeIn{
+    from{opacity:0; transform:translateY(10px);}
+    to{opacity:1; transform:translateY(0);}
+}
+.estado-Pendiente{border-left-color:red;}
+.estado-En\ proceso{border-left-color:orange;}
+.estado-Entregado{border-left-color:green;}
+</style>
+</head>
+
+<body>
+
+<h1>Panel Administrativo CHINIS</h1>
+
+<div class="container" id="listaPedidos"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCj_IMuiq68im6n1jug57qf7ketoM3xb4w",
+  authDomain: "chinis-pedidos.firebaseapp.com",
+  projectId: "chinis-pedidos",
+  storageBucket: "chinis-pedidos.firebasestorage.app",
+  messagingSenderId: "926867987996",
+  appId: "1:926867987996:web:58fd428f1a2a120d0bc9d9"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const contenedor = document.getElementById("listaPedidos");
+
+onSnapshot(collection(db,"pedidos"), (snapshot)=>{
+    contenedor.innerHTML = "";
+
+    snapshot.forEach((docSnap)=>{
+        const data = docSnap.data();
+        const id = docSnap.id;
+
+        const div = document.createElement("div");
+        div.className = "card estado-" + data.estado;
+
+        div.innerHTML = `
+            <h3>Cliente: ${data.nombre}</h3>
+            <p><b>Productos:</b><br>${data.productos.join("<br>")}</p>
+            <p><b>Total:</b> $${data.total}</p>
+            <p><b>Tipo:</b> ${data.tipo}</p>
+            <p><b>Dirección:</b> ${data.direccion || "N/A"}</p>
+            <p><b>Estado:</b></p>
+            <select onchange="cambiarEstado('${id}', this.value)">
+                <option ${data.estado==="Pendiente"?"selected":""}>Pendiente</option>
+                <option ${data.estado==="En proceso"?"selected":""}>En proceso</option>
+                <option ${data.estado==="Entregado"?"selected":""}>Entregado</option>
+            </select>
+        `;
+
+        contenedor.appendChild(div);
+    });
+});
+
+window.cambiarEstado = async function(id, nuevoEstado){
+    const pedidoRef = doc(db,"pedidos",id);
+    await updateDoc(pedidoRef,{
+        estado:nuevoEstado
+    });
+}
+</script>
+
+</body>
+</html>
