@@ -147,11 +147,14 @@ textarea{
 
 <label>Tipo de Pedido:</label>
 <select id="tipoPedido">
-<option value="Recoger">Para recoger</option>
-<option value="Domicilio">A domicilio</option>
+<option value="Recoger en tienda">Recoger en tienda</option>
+<option value="Envío a domicilio">Envío a domicilio</option>
 </select>
 
-<input type="text" id="direccion" placeholder="Dirección (si es domicilio)">
+<div id="datosDomicilio" style="display:none;">
+<input type="text" id="direccion" placeholder="Dirección (obligatoria)">
+<textarea id="referencias" placeholder="Referencias (opcional) Ej: Casa azul con portón negro"></textarea>
+</div>
 
 <button type="submit">Enviar Pedido</button>
 
@@ -177,46 +180,91 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let total = 0;
-let descuento = 0;
 let productos = [];
 
-window.agregar = function(precio, nombre){
-    total += precio;
-    productos.push(nombre + " - $" + precio);
+function actualizarTotal() {
+    let total = 0;
 
-    let li = document.createElement("li");
-    li.textContent = nombre + " - $" + precio;
-    document.getElementById("lista").appendChild(li);
+    productos.forEach(p => {
+        total += p.precio;
+    });
 
-    actualizarTotal();
-}
-
-function actualizarTotal(){
-    document.getElementById("total").innerText = total - descuento;
-}
-
-document.getElementById("codigoPromo").addEventListener("change", function(){
-    if(this.value === "CHINIS10"){
-        descuento = total * 0.10;
-        alert("Código aplicado 10% ✅");
-    } else {
-        descuento = 0;
+    if (document.getElementById("codigoPromo").value === "CHINIS10") {
+        total = total * 0.90;
     }
+
+    document.getElementById("total").innerText = total.toFixed(2);
+}
+
+window.agregar = function(precio, nombre) {
+
+    productos.push({ nombre, precio });
+
+    renderizarLista();
     actualizarTotal();
+}
+
+window.eliminarProducto = function(index) {
+
+    productos.splice(index, 1);
+
+    renderizarLista();
+    actualizarTotal();
+}
+
+function renderizarLista() {
+
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
+
+    productos.forEach((p, index) => {
+
+        let li = document.createElement("li");
+        li.innerHTML = `
+            ${p.nombre} - $${p.precio}
+            <button onclick="eliminarProducto(${index})"
+            style="margin-left:10px;background:red;color:white;border:none;border-radius:5px;padding:3px 6px;cursor:pointer;">X</button>
+        `;
+
+        lista.appendChild(li);
+    });
+}
+
+document.getElementById("codigoPromo").addEventListener("input", function(){
+    actualizarTotal();
+});
+
+document.getElementById("tipoPedido").addEventListener("change", function(){
+    if(this.value === "Envío a domicilio"){
+        document.getElementById("datosDomicilio").style.display = "block";
+    } else {
+        document.getElementById("datosDomicilio").style.display = "none";
+    }
 });
 
 document.getElementById("formPedido").addEventListener("submit", async (e)=>{
     e.preventDefault();
 
-    const nombre = document.getElementById("nombre").value;
+    const nombre = document.getElementById("nombre").value.trim();
     const tipo = document.getElementById("tipoPedido").value;
-    const direccion = document.getElementById("direccion").value;
-    const totalFinal = total - descuento;
+    const direccion = document.getElementById("direccion").value.trim();
+    const referencias = document.getElementById("referencias").value.trim();
 
     if(productos.length === 0){
         alert("Agrega al menos un producto");
         return;
+    }
+
+    if(tipo === "Envío a domicilio" && direccion === ""){
+        alert("La dirección es obligatoria para envío 🚚");
+        return;
+    }
+
+    let totalFinal = 0;
+    productos.forEach(p => totalFinal += p.precio);
+
+    if (document.getElementById("codigoPromo").value === "CHINIS10") {
+        totalFinal = totalFinal * 0.90;
     }
 
     try{
@@ -226,18 +274,18 @@ document.getElementById("formPedido").addEventListener("submit", async (e)=>{
             total: totalFinal,
             tipo: tipo,
             direccion: direccion,
+            referencias: referencias,
             fecha: serverTimestamp(),
             estado: "Pendiente"
         });
 
         alert("Pedido enviado correctamente ✅");
 
-        total = 0;
-        descuento = 0;
         productos = [];
         document.getElementById("lista").innerHTML = "";
-        actualizarTotal();
         document.getElementById("formPedido").reset();
+        document.getElementById("datosDomicilio").style.display = "none";
+        actualizarTotal();
 
     }catch(error){
         alert("Error al enviar pedido ❌");
